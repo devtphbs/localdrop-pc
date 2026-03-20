@@ -1,51 +1,150 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LocalDrop Desktop</title>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #121212; color: white; }
-        .update-notify { display: none; position: fixed; bottom: 20px; right: 20px; background: #333; padding: 15px; border-radius: 8px; border: 1px solid #444; }
-        .safe-mode-info { font-size: 0.8em; color: #888; margin-top: 10px; border-top: 1px solid #333; padding-top: 10px; }
-        button { cursor: pointer; padding: 10px; margin: 10px; border-radius: 5px; border: none; background: #007bff; color: white; }
+        :root {
+            --bg: #0d1117;
+            --card: #161b22;
+            --primary: #58a6ff;
+            --text: #c9d1d9;
+            --border: #30363d;
+        }
+        body { 
+            font-family: -apple-system, system-ui, sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Top Bar styling to match the system */
+        .title-bar {
+            height: 35px;
+            background: #010409;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            font-size: 12px;
+            color: #8b949e;
+            border-bottom: 1px solid var(--border);
+            -webkit-app-region: drag; /* Allows moving the window */
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+
+        #qrcode {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px auto;
+            display: inline-block;
+        }
+
+        .id-display {
+            font-family: monospace;
+            background: #0d1117;
+            padding: 10px;
+            border-radius: 6px;
+            color: var(--primary);
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .safe-mode-panel {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            text-align: left;
+        }
+
+        input[type="checkbox"] { accent-color: #3fb950; }
+
+        #notification {
+            background: var(--primary);
+            color: white;
+            padding: 10px;
+            text-align: center;
+            display: none;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
-    <h1>LocalDrop PC</h1>
-    <div id="peer-id">Loading ID...</div>
-    
-    <div style="margin: 20px; padding: 15px; border: 1px solid #333;">
-        <label>
-            <input type="checkbox" id="safeMode"> Enable Safe Mode
-        </label>
-        <div class="safe-mode-info">
-            <strong>What is Safe Mode?</strong><br>
-            Shields your transfer with end-to-end encryption and forces you to manually "Accept" files before they save to your computer.
+
+    <div class="title-bar">LocalDrop Desktop — v1.1.5</div>
+    <div id="notification">New version ready! <button onclick="restartApp()">Update Now</button></div>
+
+    <div class="main-content">
+        <div class="card">
+            <h1>LocalDrop PC</h1>
+            <p style="color: #8b949e;">Scan to connect your phone</p>
+            
+            <div id="qrcode"></div>
+
+            <div class="id-display" id="peer-id">Connecting...</div>
+
+            <div class="safe-mode-panel">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="safeMode" checked>
+                    <strong>Enable Safe Mode</strong>
+                </label>
+                <p style="font-size: 12px; color: #8b949e; margin-top: 8px;">
+                    Requires you to manually accept every file before it saves.
+                </p>
+            </div>
         </div>
     </div>
 
-    <div id="notification" class="update-notify">
-        <p id="message"></p>
-        <button id="restart-button" style="display:none" onclick="restartApp()">Restart & Update</button>
-    </div>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    
     <script>
         const { ipcRenderer } = require('electron');
-        const peer = new Peer('localdrop-pc-' + Math.floor(Math.random() * 10000));
+        const peer = new Peer('localdrop-pc-250'); 
 
         peer.on('open', (id) => {
-            document.getElementById('peer-id').innerText = "Your PC ID: " + id;
+            document.getElementById('peer-id').innerText = id;
+            
+            // Generate the QR code for your Vercel website
+            new QRCode(document.getElementById("qrcode"), {
+                text: "https://your-vercel-link.vercel.app", // Change this to your real link!
+                width: 160,
+                height: 160,
+                colorDark : "#000000",
+                colorLight : "#ffffff"
+            });
         });
 
-        // Receiving File Logic
         peer.on('connection', (conn) => {
             conn.on('data', (data) => {
                 const isSafe = document.getElementById('safeMode').checked;
-                
                 if (isSafe) {
-                    if (confirm(`Accept file: ${data.name} (${data.size} bytes)?`)) {
-                        saveFile(data);
-                    }
+                    if (confirm(`Accept file: ${data.name}?`)) { saveFile(data); }
                 } else {
                     saveFile(data);
                 }
@@ -54,22 +153,14 @@
 
         function saveFile(data) {
             const blob = new Blob([data.file], { type: data.type });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = data.name;
-            a.click();
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = data.name;
+            link.click();
         }
 
-        // Auto-Update UI Handlers
         ipcRenderer.on('update_available', () => {
             document.getElementById('notification').style.display = 'block';
-            document.getElementById('message').innerText = 'New update found. Downloading...';
-        });
-
-        ipcRenderer.on('update_downloaded', () => {
-            document.getElementById('message').innerText = 'Update ready!';
-            document.getElementById('restart-button').style.display = 'block';
         });
 
         function restartApp() {
