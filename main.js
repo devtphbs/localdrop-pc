@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
-const { autoUpdater } = require("electron-updater");
 
 let mainWindow;
 
@@ -8,8 +8,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 900,
     height: 700,
-    // This part automatically picks the right icon based on the OS
-    icon: path.join(__dirname, process.platform === 'win32' ? 'icon.ico' : 'icon.png'),
+    frame: false, // Removes default system bar so we can use our custom one
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -18,38 +17,35 @@ function createWindow() {
 
   mainWindow.loadFile('index.html');
 
-  // Check for updates 3 seconds after startup
-  mainWindow.once('ready-to-show', () => {
-    setTimeout(() => {
-      autoUpdater.checkForUpdatesAndNotify();
-    }, 3000);
-  });
+  // Check for updates every 10 minutes
+  setInterval(() => {
+    autoUpdater.checkForUpdatesAndNotify();
+  }, 600000);
 }
 
-// --- Auto-Updater Logic ---
+app.whenReady().then(() => {
+  createWindow();
+  autoUpdater.checkForUpdatesAndNotify();
+});
+
+// Window Controls
+ipcMain.on('min', () => mainWindow.minimize());
+ipcMain.on('max', () => mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize());
+ipcMain.on('close', () => mainWindow.close());
+
+// Auto-Update Logic
 autoUpdater.on('update-available', () => {
   mainWindow.webContents.send('update_available');
 });
 
 autoUpdater.on('update-downloaded', () => {
-  mainWindow.webContents.send('update_downloaded');
+  mainWindow.webContents.send('update_available'); // Triggers the bar in index.html
 });
 
 ipcMain.on('restart_app', () => {
   autoUpdater.quitAndInstall();
 });
 
-// --- App Lifecycle ---
-app.whenReady().then(createWindow);
-
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
-
-app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
+  if (process.platform !== 'darwin') app.quit();
 });
