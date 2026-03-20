@@ -1,6 +1,6 @@
 {
   "name": "localdrop-pc",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "Cross-platform file sharing",
   "author": "devtphbs",
   "private": true,
@@ -19,14 +19,9 @@
   "build": {
     "appId": "com.localdrop.pc",
     "productName": "LocalDrop",
-    "files": [
-      "main.js",
-      "index.html",
-      "package.json",
-      "icon.ico",
-      "icon.png",
-      "icon.icns"
-    ],
+    "directories": {
+      "output": "dist"
+    },
     "win": {
       "target": "nsis",
       "icon": "icon.ico"
@@ -42,7 +37,7 @@
     "publish": {
       "provider": "github",
       "owner": "devtphbs",
-      "repo": "localdrop-pc"
+      "repo": "localdrop-pc",
       "releaseType": "release"
     }
   }
