@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root { --bg: #FFF; --text: #1D1D1F; --sidebar: #F5F5F7; --accent: #007AFF; }
+        body.dark { --bg: #1C1C1E; --text: #FFF; --sidebar: #2C2C2E; }
+        
+        html, body { margin: 0; background: transparent; height: 100vh; overflow: hidden; font-family: -apple-system, sans-serif; }
+        .window { 
+            background: var(--bg); color: var(--text); height: 100%; border-radius: 20px; 
+            display: flex; flex-direction: column; transition: 0.3s cubic-bezier(0.2, 1, 0.2, 1);
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        .window.full { border-radius: 0; }
+        
+        .titlebar { -webkit-app-region: drag; height: 40px; display: flex; align-items: center; padding: 0 15px; background: rgba(0,0,0,0.03); }
+        .dot { width: 12px; height: 12px; border-radius: 50%; border: none; margin-right: 8px; cursor: pointer; -webkit-app-region: no-drag; }
+        
+        .layout { display: grid; grid-template-columns: 240px 1fr; flex: 1; }
+        .sidebar { background: var(--sidebar); padding: 20px; border-right: 1px solid rgba(0,0,0,0.05); }
+        .main { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        
+        #qrcode { background: white; padding: 15px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .btn { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="window" id="win">
+        <div class="titlebar">
+            <button class="dot" style="background:#ff5f57" onclick="ipcRenderer.send('ctrl','close')"></button>
+            <button class="dot" style="background:#febc2e" onclick="ipcRenderer.send('ctrl','min')"></button>
+            <button class="dot" style="background:#28c840" onclick="ipcRenderer.send('ctrl','max')"></button>
+        </div>
+        <div class="layout">
+            <div class="sidebar">
+                <h3>Settings</h3>
+                <label><input type="checkbox" id="safe"> Safe Mode</label><br><br>
+                <button class="btn" onclick="document.body.classList.toggle('dark')">🌗 Toggle Theme</button>
+                <p id="status" style="font-size:12px; margin-top:20px; opacity:0.5">Connecting...</p>
+            </div>
+            <div class="main">
+                <div id="setup">
+                    <div id="qrcode"></div>
+                    <p>Scan with Phone to Start</p>
+                </div>
+                <div id="active" class="hidden">
+                    <h2 style="color:var(--accent)">✓ Connected</h2>
+                    <button class="btn" onclick="document.getElementById('up').click()">📤 Send to Device</button>
+                    <input type="file" id="up" multiple style="display:none" onchange="sendFiles(this.files)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="in-snd" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"></audio>
+    <audio id="out-snd" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3"></audio>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        const peer = new Peer('LocalDrop-PC-' + Math.floor(Math.random()*9999));
+        let conn;
+
+        // Auto Dark Mode
+        const h = new Date().getHours();
+        if(h >= 20 || h < 8) document.body.classList.add('dark');
+
+        ipcRenderer.on('state', (e, s) => {
+            const w = document.getElementById('win');
+            s === 'max' ? w.classList.add('full') : w.classList.remove('full');
+        });
+
+        peer.on('open', (id) => {
+            document.getElementById('status').innerText = "ID: " + id;
+            new QRCode(document.getElementById("qrcode"), "https://localdrop-share.vercel.app?id=" + id);
+        });
+
+        peer.on('connection', (c) => {
+            conn = c;
+            document.getElementById('setup').classList.add('hidden');
+            document.getElementById('active').classList.remove('hidden');
+            conn.on('data', (d) => {
+                ipcRenderer.send('save-file', { name: d.name, buffer: d.file, safe: document.getElementById('safe').checked });
+            });
+        });
+
+        ipcRenderer.on('play-snd', (e, t) => { document.getElementById(t + '-snd').play(); });
+
+        function sendFiles(files) {
+            for(let f of files) conn.send({ type: 'file', name: f.name, file: f });
+            document.getElementById('out-snd').play();
+        }
+    </script>
+</body>
+</html>

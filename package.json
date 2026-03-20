@@ -1,0 +1,26 @@
+{
+  "name": "localdrop-pc",
+  "version": "1.0.0",
+  "description": "Cross-platform file sharing",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.localdrop.pc",
+    "productName": "LocalDrop",
+    "win": { "target": "nsis", "icon": "icon.ico" },
+    "mac": { "target": "dmg", "icon": "icon.icns" },
+    "linux": { "target": "AppImage", "icon": "icon.png" },
+    "publish": {
+      "provider": "github",
+      "owner": "YOUR_GITHUB_USERNAME",
+      "repo": "YOUR_REPO_NAME"
+    }
+  }
+}
