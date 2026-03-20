@@ -25,7 +25,7 @@
             overflow: hidden;
         }
 
-        /* Top Bar / Title Bar */
+        /* Top Bar */
         .title-bar {
             height: 35px;
             background: var(--top-bar);
@@ -96,34 +96,36 @@
         input[type="checkbox"] { accent-color: var(--success); width: 18px; height: 18px; }
         .desc { font-size: 12px; color: #8b949e; margin-top: 8px; line-height: 1.4; }
 
-        /* Update Notification */
+        /* Update Notification Bar */
         #update-bar {
             position: fixed;
             bottom: 0;
             width: 100%;
             background: var(--primary);
             color: white;
-            padding: 10px;
+            padding: 12px;
             text-align: center;
             display: none;
             z-index: 100;
+            font-weight: bold;
         }
         #update-bar button {
             background: white;
             color: var(--primary);
             border: none;
-            padding: 5px 15px;
-            border-radius: 4px;
-            margin-left: 10px;
+            padding: 6px 18px;
+            border-radius: 6px;
+            margin-left: 15px;
             cursor: pointer;
-            font-weight: bold;
+            font-weight: 800;
+            text-transform: uppercase;
         }
     </style>
 </head>
 <body>
 
     <div class="title-bar">
-        <span>LocalDrop Desktop</span>
+        <span>LocalDrop Desktop — v1.1.7</span>
         <div class="window-controls">
             <div class="control-btn" onclick="ipcRenderer.send('min')">—</div>
             <div class="control-btn" onclick="ipcRenderer.send('max')">▢</div>
@@ -134,7 +136,7 @@
     <div class="main-content">
         <div class="card">
             <h1>LocalDrop PC</h1>
-            <p style="color: #8b949e;">Your PC ID: <span id="peer-id-text">...</span></p>
+            <p style="color: #8b949e;">ID: <span id="peer-id-text">...</span></p>
             
             <div id="qrcode"></div>
 
@@ -144,15 +146,13 @@
                 <label class="toggle">
                     <input type="checkbox" id="safeMode" checked> Enable Safe Mode
                 </label>
-                <p class="desc">
-                    Shields your transfer with end-to-end encryption and forces you to manually "Accept" files before they save.
-                </p>
+                <p class="desc">Requires you to manually "Accept" files before they save to your computer.</p>
             </div>
         </div>
     </div>
 
     <div id="update-bar">
-        A new update is ready! <button onclick="ipcRenderer.send('restart_app')">Update & Restart</button>
+        UPDATE READY (v1.1.7) <button onclick="ipcRenderer.send('restart_app')">INSTALL NOW</button>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -189,7 +189,7 @@
             link.click();
         }
 
-        // Update Listeners
+        // Auto-update listener
         ipcRenderer.on('update_available', () => {
             document.getElementById('update-bar').style.display = 'block';
         });
