@@ -1,19 +1,13 @@
 {
   "name": "localdrop-pc",
-  "version": "1.0.3",
-  "description": "Cross-platform file sharing",
+  "version": "1.0.6",
+  "description": "File sharing",
   "author": "devtphbs",
-  "private": true,
   "main": "main.js",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/devtphbs/localdrop-pc.git"
-  },
+  "repository": "https://github.com/devtphbs/localdrop-pc",
   "scripts": {
-    "start": "electron .",
     "build": "electron-builder --publish always"
   },
-  "dependencies": {},
   "devDependencies": {
     "electron": "^28.3.3",
     "electron-builder": "^24.13.3"
@@ -21,20 +15,15 @@
   "build": {
     "appId": "com.localdrop.pc",
     "productName": "LocalDrop",
-    "directories": {
-      "output": "dist"
-    },
+    "files": [
+      "main.js",
+      "index.html",
+      "icon.ico",
+      "icon.png",
+      "icon.icns"
+    ],
     "win": {
-      "target": "nsis",
-      "icon": "icon.ico"
-    },
-    "mac": {
-      "target": "dmg",
-      "icon": "icon.icns"
-    },
-    "linux": {
-      "target": "AppImage",
-      "icon": "icon.png"
+      "target": "nsis"
     },
     "publish": {
       "provider": "github",
