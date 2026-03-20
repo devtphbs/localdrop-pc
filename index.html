@@ -7,10 +7,12 @@
     <style>
         :root {
             --bg: #0d1117;
-            --card: #161b22;
+            --top-bar: #161b22;
+            --card: #1c2128;
             --primary: #58a6ff;
             --text: #c9d1d9;
             --border: #30363d;
+            --success: #3fb950;
         }
         body { 
             font-family: -apple-system, system-ui, sans-serif; 
@@ -23,39 +25,50 @@
             overflow: hidden;
         }
 
-        /* Top Bar styling to match the system */
+        /* Top Bar / Title Bar */
         .title-bar {
             height: 35px;
-            background: #010409;
+            background: var(--top-bar);
             display: flex;
             align-items: center;
-            padding: 0 15px;
-            font-size: 12px;
-            color: #8b949e;
+            justify-content: space-between;
+            padding: 0 10px;
             border-bottom: 1px solid var(--border);
-            -webkit-app-region: drag; /* Allows moving the window */
+            -webkit-app-region: drag;
         }
+        .title-bar span { font-size: 12px; color: #8b949e; }
+        .window-controls { display: flex; -webkit-app-region: no-drag; }
+        .control-btn {
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .control-btn:hover { background: rgba(255,255,255,0.1); }
+        .close-btn:hover { background: #f85149; color: white; }
 
+        /* Main UI */
         .main-content {
             flex: 1;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 20px;
         }
-
         .card {
             background: var(--card);
             border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 30px;
+            padding: 40px;
             text-align: center;
             width: 100%;
             max-width: 400px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-
+        h1 { font-size: 2.2rem; margin: 0; color: #fff; }
         #qrcode {
             background: white;
             padding: 15px;
@@ -63,88 +76,105 @@
             margin: 20px auto;
             display: inline-block;
         }
-
-        .id-display {
+        .id-box {
             font-family: monospace;
             background: #0d1117;
-            padding: 10px;
-            border-radius: 6px;
+            padding: 12px;
+            border-radius: 8px;
             color: var(--primary);
-            font-size: 1.1rem;
-            margin-bottom: 20px;
+            font-size: 1.2rem;
             border: 1px solid var(--border);
+            margin-bottom: 20px;
         }
-
-        .safe-mode-panel {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border);
+        .safe-mode-area {
             text-align: left;
+            border-top: 1px solid var(--border);
+            padding-top: 20px;
+            margin-top: 20px;
         }
+        .toggle { display: flex; align-items: center; gap: 10px; font-weight: bold; }
+        input[type="checkbox"] { accent-color: var(--success); width: 18px; height: 18px; }
+        .desc { font-size: 12px; color: #8b949e; margin-top: 8px; line-height: 1.4; }
 
-        input[type="checkbox"] { accent-color: #3fb950; }
-
-        #notification {
+        /* Update Notification */
+        #update-bar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
             background: var(--primary);
             color: white;
             padding: 10px;
             text-align: center;
             display: none;
+            z-index: 100;
+        }
+        #update-bar button {
+            background: white;
+            color: var(--primary);
+            border: none;
+            padding: 5px 15px;
+            border-radius: 4px;
+            margin-left: 10px;
+            cursor: pointer;
             font-weight: bold;
         }
     </style>
 </head>
 <body>
 
-    <div class="title-bar">LocalDrop Desktop — v1.1.5</div>
-    <div id="notification">New version ready! <button onclick="restartApp()">Update Now</button></div>
+    <div class="title-bar">
+        <span>LocalDrop Desktop</span>
+        <div class="window-controls">
+            <div class="control-btn" onclick="ipcRenderer.send('min')">—</div>
+            <div class="control-btn" onclick="ipcRenderer.send('max')">▢</div>
+            <div class="control-btn close-btn" onclick="ipcRenderer.send('close')">✕</div>
+        </div>
+    </div>
 
     <div class="main-content">
         <div class="card">
             <h1>LocalDrop PC</h1>
-            <p style="color: #8b949e;">Scan to connect your phone</p>
+            <p style="color: #8b949e;">Your PC ID: <span id="peer-id-text">...</span></p>
             
             <div id="qrcode"></div>
 
-            <div class="id-display" id="peer-id">Connecting...</div>
+            <div class="id-box" id="peer-id">Connecting...</div>
 
-            <div class="safe-mode-panel">
-                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                    <input type="checkbox" id="safeMode" checked>
-                    <strong>Enable Safe Mode</strong>
+            <div class="safe-mode-area">
+                <label class="toggle">
+                    <input type="checkbox" id="safeMode" checked> Enable Safe Mode
                 </label>
-                <p style="font-size: 12px; color: #8b949e; margin-top: 8px;">
-                    Requires you to manually accept every file before it saves.
+                <p class="desc">
+                    Shields your transfer with end-to-end encryption and forces you to manually "Accept" files before they save.
                 </p>
             </div>
         </div>
     </div>
 
+    <div id="update-bar">
+        A new update is ready! <button onclick="ipcRenderer.send('restart_app')">Update & Restart</button>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    
     <script>
         const { ipcRenderer } = require('electron');
         const peer = new Peer('localdrop-pc-250'); 
 
         peer.on('open', (id) => {
             document.getElementById('peer-id').innerText = id;
+            document.getElementById('peer-id-text').innerText = id;
             
-            // Generate the QR code for your Vercel website
             new QRCode(document.getElementById("qrcode"), {
-                text: "https://your-vercel-link.vercel.app", // Change this to your real link!
-                width: 160,
-                height: 160,
-                colorDark : "#000000",
-                colorLight : "#ffffff"
+                text: "https://localdrop-share.vercel.app", 
+                width: 160, height: 160
             });
         });
 
         peer.on('connection', (conn) => {
             conn.on('data', (data) => {
-                const isSafe = document.getElementById('safeMode').checked;
-                if (isSafe) {
-                    if (confirm(`Accept file: ${data.name}?`)) { saveFile(data); }
+                if (document.getElementById('safeMode').checked) {
+                    if (confirm(`Accept file: ${data.name}?`)) saveFile(data);
                 } else {
                     saveFile(data);
                 }
@@ -159,13 +189,10 @@
             link.click();
         }
 
+        // Update Listeners
         ipcRenderer.on('update_available', () => {
-            document.getElementById('notification').style.display = 'block';
+            document.getElementById('update-bar').style.display = 'block';
         });
-
-        function restartApp() {
-            ipcRenderer.send('restart_app');
-        }
     </script>
 </body>
 </html>
