@@ -19,8 +19,8 @@
     "linux": { "target": "AppImage", "icon": "icon.png" },
     "publish": {
       "provider": "github",
-      "owner": "YOUR_GITHUB_USERNAME",
-      "repo": "YOUR_REPO_NAME"
+      "owner": "devtphbs",
+      "repo": "localdrop-pc"
     }
   }
 }
