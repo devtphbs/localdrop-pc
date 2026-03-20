@@ -1,41 +1,44 @@
-const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const fs = require('fs');
+const { autoUpdater } = require("electron-updater");
+
+let mainWindow;
 
 function createWindow() {
-    const win = new BrowserWindow({
-        width: 1000, height: 700, frame: false, transparent: true,
-        webPreferences: { nodeIntegration: true, contextIsolation: false }
-    });
-    win.loadFile('index.html');
+  mainWindow = new BrowserWindow({
+    width: 900,
+    height: 700,
+    icon: path.join(__dirname, 'icon.ico'),
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  });
 
-    win.on('maximize', () => win.webContents.send('state', 'max'));
-    win.on('unmaximize', () => win.webContents.send('state', 'normal'));
+  mainWindow.loadFile('index.html');
+
+  // Check for updates as soon as the app starts
+  mainWindow.once('ready-to-show', () => {
+    autoUpdater.checkForUpdatesAndNotify();
+  });
 }
 
-ipcMain.on('save-file', async (event, { name, buffer, safe }) => {
-    if (safe) {
-        const { response } = await dialog.showMessageBox({
-            type: 'info', buttons: ['Accept', 'Cancel'], message: `Accept ${name}?`
-        });
-        if (response !== 0) return;
-    }
-
-    const dir = path.join(app.getPath('documents'), 'LocalDropReceived');
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
-    
-    const filePath = path.join(dir, name);
-    fs.writeFile(filePath, Buffer.from(buffer), () => {
-        shell.showItemInFolder(filePath);
-        event.reply('play-snd', 'in');
-    });
+// Auto-update events
+autoUpdater.on('update-available', () => {
+  mainWindow.webContents.send('update_available');
 });
 
-ipcMain.on('ctrl', (e, act) => {
-    const win = BrowserWindow.getFocusedWindow();
-    if(act === 'close') app.quit();
-    if(act === 'min') win.minimize();
-    if(act === 'max') win.isMaximized() ? win.unmaximize() : win.maximize();
+autoUpdater.on('update-downloaded', () => {
+  mainWindow.webContents.send('update_downloaded');
+});
+
+// Handle the "Restart to Update" button click from the UI
+ipcMain.on('restart_app', () => {
+  autoUpdater.quitAndInstall();
 });
 
 app.whenReady().then(createWindow);
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') app.quit();
+});
