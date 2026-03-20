@@ -1,6 +1,6 @@
 {
   "name": "localdrop-pc",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Cross-platform file sharing",
   "author": "devtphbs",
   "private": true,
@@ -11,7 +11,7 @@
   },
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder"
+    "build": "electron-builder --publish always"
   },
   "dependencies": {},
   "devDependencies": {
