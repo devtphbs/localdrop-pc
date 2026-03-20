@@ -4,23 +4,30 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   release:
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false # <--- THIS STOPS ONE ERROR FROM KILLING EVERYTHING
+      fail-fast: false
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
+
     steps:
       - name: Check out code
         uses: actions/checkout@v4
-      - name: Install Node
+
+      - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22 # <--- UPDATED TO STOP THE WARNINGS
-      - name: Install Deps
+          node-version: 24
+
+      - name: Install Dependencies
         run: npm install
-      - name: Build & Upload
+
+      - name: Build and Publish
         run: npm run build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
