@@ -8,7 +8,8 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 900,
     height: 700,
-    icon: path.join(__dirname, 'icon.ico'),
+    // This part automatically picks the right icon based on the OS
+    icon: path.join(__dirname, process.platform === 'win32' ? 'icon.ico' : 'icon.png'),
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -17,13 +18,15 @@ function createWindow() {
 
   mainWindow.loadFile('index.html');
 
-  // Check for updates as soon as the app starts
+  // Check for updates 3 seconds after startup
   mainWindow.once('ready-to-show', () => {
-    autoUpdater.checkForUpdatesAndNotify();
+    setTimeout(() => {
+      autoUpdater.checkForUpdatesAndNotify();
+    }, 3000);
   });
 }
 
-// Auto-update events
+// --- Auto-Updater Logic ---
 autoUpdater.on('update-available', () => {
   mainWindow.webContents.send('update_available');
 });
@@ -32,13 +35,21 @@ autoUpdater.on('update-downloaded', () => {
   mainWindow.webContents.send('update_downloaded');
 });
 
-// Handle the "Restart to Update" button click from the UI
 ipcMain.on('restart_app', () => {
   autoUpdater.quitAndInstall();
 });
 
+// --- App Lifecycle ---
 app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow();
+  }
 });
