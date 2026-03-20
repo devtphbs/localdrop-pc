@@ -43,6 +43,7 @@
       "provider": "github",
       "owner": "devtphbs",
       "repo": "localdrop-pc"
+      "releaseType": "release"
     }
   }
 }
