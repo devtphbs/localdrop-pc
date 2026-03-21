@@ -12,7 +12,6 @@
             --primary: #58a6ff;
             --text: #c9d1d9;
             --border: #30363d;
-            --success: #3fb950;
         }
         body { 
             font-family: -apple-system, system-ui, sans-serif; 
@@ -25,32 +24,54 @@
             overflow: hidden;
         }
 
-        /* Top Bar */
+        /* --- macOS Style Top Bar --- */
         .title-bar {
-            height: 35px;
+            height: 38px;
             background: var(--top-bar);
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 0 10px;
+            padding: 0 15px;
             border-bottom: 1px solid var(--border);
             -webkit-app-region: drag;
         }
-        .title-bar span { font-size: 12px; color: #8b949e; }
-        .window-controls { display: flex; -webkit-app-region: no-drag; }
-        .control-btn {
-            width: 35px;
-            height: 35px;
+        .window-controls {
+            display: flex;
+            gap: 8px;
+            -webkit-app-region: no-drag;
+        }
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 8px;
+            font-weight: bold;
+            color: rgba(0,0,0,0.5);
             cursor: pointer;
-            font-size: 14px;
+            text-decoration: none;
+            border: 0.5px solid rgba(0,0,0,0.1);
         }
-        .control-btn:hover { background: rgba(255,255,255,0.1); }
-        .close-btn:hover { background: #f85149; color: white; }
+        .dot:hover color { color: rgba(0,0,0,0.8); }
+        .close { background: #ff5f56; }
+        .minimize { background: #ffbd2e; }
+        .maximize { background: #27c93f; }
+        
+        /* Icons show on hover */
+        .dot span { display: none; }
+        .window-controls:hover .dot span { display: inline-block; }
 
-        /* Main UI */
+        .app-title {
+            margin-left: 15px;
+            font-size: 12px;
+            color: #8b949e;
+            flex-grow: 1;
+            text-align: center;
+            margin-right: 50px; /* offset for symmetry */
+        }
+
+        /* --- Main UI --- */
         .main-content {
             flex: 1;
             display: flex;
@@ -92,11 +113,9 @@
             padding-top: 20px;
             margin-top: 20px;
         }
-        .toggle { display: flex; align-items: center; gap: 10px; font-weight: bold; }
-        input[type="checkbox"] { accent-color: var(--success); width: 18px; height: 18px; }
-        .desc { font-size: 12px; color: #8b949e; margin-top: 8px; line-height: 1.4; }
+        input[type="checkbox"] { accent-color: #3fb950; width: 18px; height: 18px; }
 
-        /* Update Notification Bar */
+        /* Update Notification */
         #update-bar {
             position: fixed;
             bottom: 0;
@@ -106,67 +125,64 @@
             padding: 12px;
             text-align: center;
             display: none;
-            z-index: 100;
             font-weight: bold;
         }
         #update-bar button {
             background: white;
             color: var(--primary);
             border: none;
-            padding: 6px 18px;
-            border-radius: 6px;
-            margin-left: 15px;
+            padding: 5px 15px;
+            border-radius: 4px;
+            margin-left: 10px;
             cursor: pointer;
-            font-weight: 800;
-            text-transform: uppercase;
         }
     </style>
 </head>
 <body>
 
     <div class="title-bar">
-        <span>LocalDrop Desktop — v1.1.7</span>
         <div class="window-controls">
-            <div class="control-btn" onclick="ipcRenderer.send('min')">—</div>
-            <div class="control-btn" onclick="ipcRenderer.send('max')">▢</div>
-            <div class="control-btn close-btn" onclick="ipcRenderer.send('close')">✕</div>
+            <div class="dot close" onclick="ipcRenderer.send('close')"><span>✕</span></div>
+            <div class="dot minimize" onclick="ipcRenderer.send('min')"><span>−</span></div>
+            <div class="dot maximize" onclick="ipcRenderer.send('max')"><span>＋</span></div>
         </div>
+        <div class="app-title">LocalDrop PC — v1.1.7</div>
     </div>
 
     <div class="main-content">
         <div class="card">
             <h1>LocalDrop PC</h1>
-            <p style="color: #8b949e;">ID: <span id="peer-id-text">...</span></p>
+            <p style="color: #8b949e;">Scan to connect instantly</p>
             
             <div id="qrcode"></div>
 
             <div class="id-box" id="peer-id">Connecting...</div>
 
             <div class="safe-mode-area">
-                <label class="toggle">
+                <label style="display: flex; align-items: center; gap: 10px; font-weight: bold;">
                     <input type="checkbox" id="safeMode" checked> Enable Safe Mode
                 </label>
-                <p class="desc">Requires you to manually "Accept" files before they save to your computer.</p>
             </div>
         </div>
     </div>
 
     <div id="update-bar">
-        UPDATE READY (v1.1.7) <button onclick="ipcRenderer.send('restart_app')">INSTALL NOW</button>
+        Update Ready! <button onclick="ipcRenderer.send('restart_app')">Update Now</button>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script>
         const { ipcRenderer } = require('electron');
-        const peer = new Peer('localdrop-pc-250'); 
+        const MY_ID = 'localdrop-pc-250';
+        const peer = new Peer(MY_ID); 
 
         peer.on('open', (id) => {
             document.getElementById('peer-id').innerText = id;
-            document.getElementById('peer-id-text').innerText = id;
             
+            // AUTO-CONNECT LOGIC: Passes the ID in the URL
             new QRCode(document.getElementById("qrcode"), {
-                text: "https://localdrop-share.vercel.app", 
+                text: `https://localdrop-share.vercel.app?target=${id}`, 
                 width: 160, height: 160
             });
         });
@@ -189,7 +205,6 @@
             link.click();
         }
 
-        // Auto-update listener
         ipcRenderer.on('update_available', () => {
             document.getElementById('update-bar').style.display = 'block';
         });
